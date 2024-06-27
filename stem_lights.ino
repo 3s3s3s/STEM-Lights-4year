@@ -1,132 +1,151 @@
+#include "arduino_secrets.h"
+
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
 #endif
 
 
-#define LED_PIN    6
-#define LED_PIN_2    5
+#define LED_PIN    13
+#define LED_PIN_2    11
 
 #define LED_COUNT 9
 #define LED_COUNT_2 13
 
 Adafruit_NeoPixel strip1(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel strip2(LED_COUNT_2, LED_PIN_2, NEO_GRB + NEO_KHZ800);
-int trigPin = 7;
-int echoPin = 0;
+int trigPin = 10;
+int echoPin = 12;
 bool someoneNearby = false;
 long duration;
 long distance;
-int stripCount = LED_COUNT;
-int strip2Count = LED_COUNT_2;
 int currentMillis;
 int previousMillis;
 int difference;
 bool proceed=false;
-int a=0;
-int b=0;
-int c;
-int i=0;
-
+int Bpin=4;
+int Lpin=9;
+int BHpin=2;
+int DHpin=7;
+//Pin 3 doesn't work
 void setup() {
 
-  pinMode(4, OUTPUT);
-  pinMode(3, OUTPUT);
-  pinMode(2, OUTPUT);
-  pinMode(1, OUTPUT);
-  pinMode(9, OUTPUT);
-  pinMode(8, OUTPUT);
+  pinMode(Bpin, OUTPUT);
+  pinMode(Lpin, OUTPUT);
+  pinMode(BHpin, OUTPUT);
+  pinMode(DHpin, OUTPUT);
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT); 
   Serial.begin(9600);
   normalLightsOf();
   strip1.begin();
   strip1.show();
-  strip1.setBrightness(51);
+  strip1.setBrightness(25);
 
   strip2.begin();
   strip2.show();
-  strip2.setBrightness(51);
+  strip2.setBrightness(25);
 }
 
 
-
+//This repeats over and over untill the arduino has no power 
 void loop() {
-  digitalWrite(1,LOW);
-  digitalWrite(8, HIGH);
-  digitalWrite(9, HIGH);
+  digitalWrite(Lpin,HIGH);
+  if(checkNearby()){
+    colorWipe2(strip2.Color(rand()%256,rand()%100,rand()%256),10);
+    colorWipe(strip1.Color(rand()%256,rand()%256,rand()%100),10);
+    delay(1000);
+  }
 }
 
-void checkNearby() {
+bool checkNearby() {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH);
-  distance = duration * 0.034 / 200;
-  if (distance < 1 && !someoneNearby) {
-    someoneNearby = true;
+  distance = duration * 0.034 / 2;
+  if(distance<100){
     normalLightsOn();
+    return true;
   }
-  if (distance > 1 && someoneNearby) {
-    someoneNearby = false;
-    normalLightsOf();
+  if(distance>150){
+    strip1.clear();
+    strip2.clear();
+    strip1.show();
+    strip2.show();
+    if(checkMillis(500)){
+      digitalWrite(trigPin, LOW);
+      delayMicroseconds(2);
+      digitalWrite(trigPin, HIGH);
+      delayMicroseconds(10);
+      digitalWrite(trigPin, LOW);
+      duration = pulseIn(echoPin, HIGH);
+      distance = duration * 0.034 / 2;
+      if(distance>10){
+        delay(100+rand()%100);
+        normalLightsOf();
+      }
+    }
+    return false;
   }
 }
 
-void checkMillis(int difference) {
+bool checkMillis(int difference) {
   currentMillis = millis();
   if (currentMillis>previousMillis) {
     if(difference<=currentMillis-previousMillis){
-      proceed=true;
+      return true;
     }else{
-      proceed=false;
+      return false;
     }
-    previousMillis = currentMillis;
+    currentMillis=previousMillis;
+    return currentMillis;
   }
-  return proceed;
 }
 
 void normalLightsOn() {
-  digitalWrite(4, HIGH);
-  digitalWrite(3, HIGH);
-  digitalWrite(2, HIGH);
-  digitalWrite(1, HIGH);
+  digitalWrite(Bpin, HIGH);
+  delay(100+rand()%900);
+  digitalWrite(BHpin, HIGH);
+  delay(100+rand()%900);
+  digitalWrite(DHpin, HIGH);
 }
 
 void normalLightsOf() {
-  digitalWrite(4, LOW);
-  digitalWrite(3, LOW);
-  digitalWrite(2, LOW);
-  digitalWrite(1, LOW);
+  digitalWrite(Bpin, LOW);
+  delay(100+rand()%900);
+  digitalWrite(BHpin, LOW);
+  delay(100+rand()%900);
+  digitalWrite(DHpin, LOW);
 }
 
-void colorWipe(uint32_t color, int wait, Adafruit_NeoPixel strip) {
-  for (i = 0 ; i < strip.numPixels();i++) {
-    strip.setPixelColor(i, color);
-    strip.show();
-    delay(wait);
+void colorWipe(uint32_t color, int wait) {
+  for(int i=0; i<strip1.numPixels(); i++) {
+    strip1.setPixelColor(i, color);
+    strip1.show();
+    delay(wait);  
+  }
+}
+
+void colorWipe2(uint32_t color, int wait) {
+  for(int i=0; i<strip2.numPixels(); i++) {
+    strip2.setPixelColor(i, color);
+    strip2.show();
+    delay(wait);  
   }
 }
 
 void theaterChase(uint32_t color, int wait, Adafruit_NeoPixel strip) {
-  if (a < 10) {
-    if (b < 3) {
-      b++;
+  for(int a=0; a<10; a++) {
+    for(int b=0; b<3; b++) {
       strip.clear();
-      if (c < strip.numPixels()) {
-        c;
+      for(int c=b; c<strip.numPixels(); c += 3) {
         strip.setPixelColor(c, color);
-        return c;
       }
       strip.show();
       delay(wait);
-      return c;
-      return b;
     }
-    return c;
-    return b;
-    return a++;
   }
 }
 

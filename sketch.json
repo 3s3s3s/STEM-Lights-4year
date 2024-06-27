@@ -8,7 +8,7 @@
   "included_libs": [
     {
       "name": "Adafruit NeoPixel",
-      "version": "1.12.0"
+      "version": "1.12.2"
     }
   ]
 }
